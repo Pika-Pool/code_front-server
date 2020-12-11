@@ -3,6 +3,7 @@ if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 // requires
 const express = require('express');
 const http = require('http');
+const uuid = require('uuid');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -41,7 +42,7 @@ app.post('/login', (req, res) => {
 
 	roomsMap.set(roomId, { exp });
 
-	console.log(`User ${roomID} logged in`);
+	console.log(`User ${roomId} logged in`);
 	res.json({ exp, roomId });
 });
 
@@ -91,7 +92,7 @@ io.on('connection', socket => {
 			// as cli is the authenticating node
 			if (clientType === 'cli') {
 				const browserSocket = roomsMap.get(roomId)['browser'];
-				browserSocket.disconnect(true);
+				if (browserSocket) browserSocket.disconnect();
 				roomsMap.delete(roomId);
 			}
 			// remove current client(browser for now) from roomsMap
