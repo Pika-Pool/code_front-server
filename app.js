@@ -126,7 +126,7 @@ function authenticateHandshake({ socket, roomId, clientType }, cb) {
 
 	// disconnect socket if not valid
 	if (err) {
-		socket.disconnect(true);
+		socket.disconnect();
 		console.log(`Error: ${err.message}`);
 		return cb(err);
 	}
