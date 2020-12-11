@@ -14,8 +14,9 @@ app.use(express.json());
 
 // CONFIGURE CORS OPTIONS
 const cors = require('cors');
+const allowedCorsOrigins = process.env.ALLOWED_CORS_ORIGINS || '';
 const corsOptions = {
-	origin: process.env.ALLOWED_CORS_ORIGINS.split('|'),
+	origin: allowedCorsOrigins.split('|'),
 	method: ['GET', 'POST', 'DELETE'],
 	maxAge: 24 * 60 * 60,
 };
