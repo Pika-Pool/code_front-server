@@ -54,12 +54,52 @@ io.use((socket, next) => {
 });
 
 io.on('connection', socket => {
-	const handshakeData = socket.request;
+	const { query } = socket.handshake;
+	const { roomId, clientType } = query;
 
-	socket.on('message', message => {
-		console.log(`message recieved : ${message}`);
-		socket.disconnect(true);
-	});
+	const roomDetails = roomsMap.get(roomId);
+	roomsMap.set(roomId, { ...roomDetails, [clientType]: socket.id });
+
+	socket.join(roomId);
+
+	socket
+		.on('message', message => {
+			// any random messages or warnings
+			console.log(`message recieved : ${message}`);
+			socket.to(roomId).emit('message', message);
+		})
+		.on('appJsonData', jsonData => {
+			// json containing data to build client's files
+			socket.to(roomId).emit('appJsonData', jsonData);
+		})
+		.on('error', err => {
+			// any errors from client
+			console.log(
+				`Error on: ${{ socketId: socket.id, roomId }}: ${error}`
+			);
+		})
+		.on('disconnecting', reason => {
+			// when client disconnects
+			console.log(
+				`${{ socketId: socket.id }} is disconnecting from ${{
+					roomId,
+				}}: ${reason}`
+			);
+
+			// if cli disconnects, end session for all clients
+			// as cli is the authenticating node
+			if (clientType === 'cli') {
+				const browserSocket = roomsMap.get(roomId)['browser'];
+				browserSocket.disconnect(true);
+				roomsMap.delete(roomId);
+			}
+			// remove current client(browser for now) from roomsMap
+			else {
+				const clientObj = roomsMap.get(roomId);
+				delete clientObj[clientType];
+				roomsMap.set(roomId, clientObj);
+			}
+		});
 });
 
 httpServer.listen(PORT, () => {
