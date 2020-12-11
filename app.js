@@ -29,6 +29,21 @@ app.use(cors(corsOptions));
  */
 const roomsMap = new Map();
 
+app.post('/login', (req, res) => {
+	/*
+	 * send an access token / roomId
+	 * for establishing socket
+	 */
+
+	const roomId = uuid.v4();
+	const exp = Date.now() + 24 * 60 * 60 * 1000; // 24hrs/1day
+
+	roomsMap.set(roomId, { exp });
+
+	console.log(`User ${roomID} logged in`);
+	res.json({ exp, roomId });
+});
+
 const io = require('socket.io')(httpServer);
 
 io.on('connection', socket => {
