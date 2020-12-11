@@ -46,6 +46,13 @@ app.post('/login', (req, res) => {
 
 const io = require('socket.io')(httpServer);
 
+// validate auth credenttals sent in query
+io.use((socket, next) => {
+	const { query } = socket.handshake;
+	const { roomId, clientType } = query;
+	const x = authenticateHandshake({ socket, roomId, clientType }, next);
+});
+
 io.on('connection', socket => {
 	const handshakeData = socket.request;
 
@@ -58,3 +65,30 @@ io.on('connection', socket => {
 httpServer.listen(PORT, () => {
 	console.log(`Listening at http://localhost:${PORT}/`);
 });
+
+function authenticateHandshake({ socket, roomId, clientType }, cb) {
+	const validClientTypes = ['browser', 'cli'];
+	let err = null;
+
+	if (!roomId || !clientType) {
+		err = new Error(
+			'roomId and clientType required in query to authenticate'
+		);
+	} else if (!roomsMap.has(roomId) || roomsMap.get(roomId).exp < Date.now()) {
+		err = new Error('Invalid roomId / room expired');
+	} else if (!validClientTypes.includes(clientType)) {
+		err = new Error('Invalid client type');
+	} else if (roomsMap.get(roomId)[clientType]) {
+		err = new Error('Room already full');
+	}
+
+	// disconnect socket if not valid
+	if (err) {
+		socket.disconnect(true);
+		console.log(`Error: ${err.message}`);
+		return cb(err);
+	}
+
+	// authenticated successfully
+	cb();
+}
