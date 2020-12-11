@@ -1,8 +1,12 @@
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
+// requires
 const express = require('express');
+const http = require('http');
 
 const app = express();
+const httpServer = http.createServer(app);
+
 const PORT = process.env.PORT || 8080;
 
 app.use(express.urlencoded({ extended: true }));
@@ -19,6 +23,23 @@ const corsOptions = {
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
-app.listen(PORT, (...x) => {
+// map to store socket room info
+/* structure:
+ * roomId : {['browser'/'cli'] : socket.id}
+ */
+const roomsMap = new Map();
+
+const io = require('socket.io')(httpServer);
+
+io.on('connection', socket => {
+	const handshakeData = socket.request;
+
+	socket.on('message', message => {
+		console.log(`message recieved : ${message}`);
+		socket.disconnect(true);
+	});
+});
+
+httpServer.listen(PORT, () => {
 	console.log(`Listening at http://localhost:${PORT}/`);
 });
