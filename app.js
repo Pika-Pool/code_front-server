@@ -91,14 +91,22 @@ io.on('connection', socket => {
 			// if cli disconnects, end session for all clients
 			// as cli is the authenticating node
 			if (clientType === 'cli') {
-				const browserSocket = roomsMap.get(roomId)['browser'];
-				if (browserSocket) browserSocket.disconnect();
+				const clientObj = roomsMap.get(roomId);
+				Object.entries(clientObj).forEach(([key, clientId]) => {
+					// socket.id is current socket's id
+					// clientId is id of all sockets in room
+					socket.id !== clientId && io.sockets.connected[clientId]
+						? io.sockets.connected[socketId].disconnect()
+						: void 0;
+				});
 				roomsMap.delete(roomId);
 			}
 			// remove current client(browser for now) from roomsMap
 			else {
 				const clientObj = roomsMap.get(roomId);
-				delete clientObj[clientType];
+				if (clientType in clientObj) {
+					delete clientObj[clientType];
+				}
 				roomsMap.set(roomId, clientObj);
 			}
 		});
